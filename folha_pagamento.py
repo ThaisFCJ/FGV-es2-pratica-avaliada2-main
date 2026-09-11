@@ -23,20 +23,20 @@ INSS_ALIQUOTA_4 = 0.14
 
 DEDUCAO_DEPENDENTE = 189.59
 
-IRPF_FAIXA_1 = 2259.20
-IRPF_FAIXA_2 = 2826.65
-IRPF_FAIXA_3 = 3751.05
-IRPF_FAIXA_4 = 4664.68
+IRRF_FAIXA_1 = 2259.20
+IRRF_FAIXA_2 = 2826.65
+IRRF_FAIXA_3 = 3751.05
+IRRF_FAIXA_4 = 4664.68
 
-IRPF_ALIQUOTA_1 = 0.075
-IRPF_ALIQUOTA_2 = 0.15
-IRPF_ALIQUOTA_3 = 0.225
-IRPF_ALIQUOTA_4 = 0.275
+IRRF_ALIQUOTA_1 = 0.075
+IRRF_ALIQUOTA_2 = 0.15
+IRRF_ALIQUOTA_3 = 0.225
+IRRF_ALIQUOTA_4 = 0.275
 
-IRPF_DEDUCAO_1 = 169.44
-IRPF_DEDUCAO_2 = 381.44
-IRPF_DEDUCAO_3 = 662.77
-IRPF_DEDUCAO_4 = 896.00
+IRRF_DEDUCAO_1 = 169.44
+IRRF_DEDUCAO_2 = 381.44
+IRRF_DEDUCAO_3 = 662.77
+IRRF_DEDUCAO_4 = 896.00
 
 def calcular_horas_extras(salario_base, horas_extras):
     valor_hora = salario_base / HORAS_MENSAIS
@@ -74,6 +74,42 @@ def caclular_inss(salario_bruto):
             + (INSS_TETO - INSS_FAIXA_3) * INSS_ALIQUOTA_4
     )
 
+def calcular_irrf(salario_bruto, inss, dependentes):
+    base_calculo = (
+        salario_bruto
+        - inss
+        - dependentes * DEDUCAO_DEPENDENTE
+    )
+
+    if base_calculo <= IRRF_FAIXA_1:
+        irrf = 0
+
+    elif base_calculo <= IRRF_FAIXA_2:
+        irrf = (
+            base_calculo * IRRF_ALIQUOTA_1
+            - IRRF_DEDUCAO_1
+        )
+
+    elif base_calculo <= IRRF_FAIXA_3:
+        irrf = (
+            base_calculo * IRRF_ALIQUOTA_2
+            - IRRF_DEDUCAO_2
+        )
+
+    elif base_calculo <= IRRF_FAIXA_4:
+        irrf = (
+            base_calculo * IRRF_ALIQUOTA_3
+            - IRRF_DEDUCAO_3
+        )
+    
+    else:
+        irrf = (
+        base_calculo * IRRF_ALIQUOTA_4
+        - IRRF_DEDUCAO_4
+    )
+
+    return max(irrf, 0)
+
 def calcular_folha(f):
     # f eh um dicionario com os dados do funcionario
     # campos: nome, salario_base, horas_extras, dependentes, tem_bonus, valor_bonus
@@ -94,27 +130,12 @@ def calcular_folha(f):
     # salario bruto
     sbr = sb + valor_he + b
 
-    #INSS
+    # INSS
     ins = caclular_inss(sbr)
 
     # IRRF - usa base de calculo (salario bruto - INSS - deducao por dependentes)
     dep = f["dependentes"]
-    base = sbr - ins - dep * 189.59  # 189.59 = deducao por dependente
-    if base <= 2259.20:
-        irrf = 0
-    else:
-        if base <= 2826.65:
-            irrf = base * 0.075 - 169.44
-        else:
-            if base <= 3751.05:
-                irrf = base * 0.15 - 381.44
-            else:
-                if base <= 4664.68:
-                    irrf = base * 0.225 - 662.77
-                else:
-                    irrf = base * 0.275 - 896.00
-    if irrf < 0:
-        irrf = 0
+    irrf = calcular_irrf(sbr, ins, dep)
 
     # liquido
     liq = sbr - ins - irrf
