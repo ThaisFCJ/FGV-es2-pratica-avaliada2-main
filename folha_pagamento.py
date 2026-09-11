@@ -122,7 +122,7 @@ def calcular_folha(funcionario):
     valor_horas_extras = calcular_horas_extras(salario_base, horas_extras)
 
     # bonus
-    if funcionario["tem_bonus"] == True:
+    if funcionario["tem_bonus"]:
         bonus = funcionario["valor_bonus"]
     else:
         bonus = 0
