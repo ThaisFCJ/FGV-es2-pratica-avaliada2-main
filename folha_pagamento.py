@@ -8,6 +8,71 @@ qualidade que o aluno deve identificar e refatorar.
 # horas extras descontos de INSS e IRRF e bonus de produtividade
 # CUIDADO ao alterar pq muita coisa depende disso aqui
 
+HORAS_MENSAIS = 220
+ADICIONAL_HORA_EXTRA = 1.5
+
+INSS_FAIXA_1 = 1412
+INSS_FAIXA_2 = 2666.68
+INSS_FAIXA_3 = 4000.03
+INSS_TETO = 7786.02
+
+INSS_ALIQUOTA_1 = 0.075
+INSS_ALIQUOTA_2 = 0.09
+INSS_ALIQUOTA_3 = 0.12
+INSS_ALIQUOTA_4 = 0.14
+
+DEDUCAO_DEPENDENTE = 189.59
+
+IRPF_FAIXA_1 = 2259.20
+IRPF_FAIXA_2 = 2826.65
+IRPF_FAIXA_3 = 3751.05
+IRPF_FAIXA_4 = 4664.68
+
+IRPF_ALIQUOTA_1 = 0.075
+IRPF_ALIQUOTA_2 = 0.15
+IRPF_ALIQUOTA_3 = 0.225
+IRPF_ALIQUOTA_4 = 0.275
+
+IRPF_DEDUCAO_1 = 169.44
+IRPF_DEDUCAO_2 = 381.44
+IRPF_DEDUCAO_3 = 662.77
+IRPF_DEDUCAO_4 = 896.00
+
+def calcular_horas_extras(salario_base, horas_extras):
+    valor_hora = salario_base / HORAS_MENSAIS
+    return horas_extras * valor_hora * ADICIONAL_HORA_EXTRA
+
+def caclular_inss(salario_bruto):
+    if salario_bruto <= INSS_FAIXA_1:
+        return salario_bruto * INSS_ALIQUOTA_1
+        
+    if salario_bruto <= INSS_FAIXA_2:
+        return (
+            INSS_FAIXA_1 * INSS_ALIQUOTA_1
+            + (salario_bruto - INSS_FAIXA_1) * INSS_ALIQUOTA_2
+        )
+
+    if salario_bruto <= INSS_FAIXA_3:
+        return (
+            INSS_FAIXA_1 * INSS_ALIQUOTA_1
+            + (INSS_FAIXA_2 - INSS_FAIXA_1) * INSS_ALIQUOTA_2
+            + (salario_bruto - INSS_FAIXA_2) * INSS_ALIQUOTA_3
+        )
+
+    if salario_bruto <= INSS_TETO:
+        return (
+            INSS_FAIXA_1 * INSS_ALIQUOTA_1
+            + (INSS_FAIXA_2 - INSS_FAIXA_1) * INSS_ALIQUOTA_2
+            + (INSS_FAIXA_3 - INSS_FAIXA_2) * INSS_ALIQUOTA_3
+            + (salario_bruto - INSS_FAIXA_3) * INSS_ALIQUOTA_4
+        )
+
+    return (
+        INSS_FAIXA_1 * INSS_ALIQUOTA_1
+            + (INSS_FAIXA_2 - INSS_FAIXA_1) * INSS_ALIQUOTA_2
+            + (INSS_FAIXA_3 - INSS_FAIXA_2) * INSS_ALIQUOTA_3
+            + (INSS_TETO - INSS_FAIXA_3) * INSS_ALIQUOTA_4
+    )
 
 def calcular_folha(f):
     # f eh um dicionario com os dados do funcionario
@@ -15,11 +80,10 @@ def calcular_folha(f):
     # retorna outro dicionario com salario_bruto inss irrf liquido etc
 
     # calcula horas extras (50% a mais)
-    he = f["horas_extras"]
     sb = f["salario_base"]
-    # 220 = horas mensais padrao no Brasil
-    valor_hora = sb / 220
-    valor_he = he * valor_hora * 1.5
+    he = f["horas_extras"]
+
+    valor_he = calcular_horas_extras(sb,he)
 
     # bonus
     if f["tem_bonus"] == True:
@@ -30,34 +94,8 @@ def calcular_folha(f):
     # salario bruto
     sbr = sb + valor_he + b
 
-    # INSS - tabela 2024 simplificada
-    if sbr <= 1412:
-        ins = sbr * 0.075
-    else:
-        if sbr <= 2666.68:
-            # faixa 2
-            ins = 1412 * 0.075 + (sbr - 1412) * 0.09
-        else:
-            if sbr <= 4000.03:
-                # faixa 3
-                ins = 1412 * 0.075 + (2666.68 - 1412) * 0.09 + (sbr - 2666.68) * 0.12
-            else:
-                if sbr <= 7786.02:
-                    # faixa 4
-                    ins = (
-                        1412 * 0.075
-                        + (2666.68 - 1412) * 0.09
-                        + (4000.03 - 2666.68) * 0.12
-                        + (sbr - 4000.03) * 0.14
-                    )
-                else:
-                    # teto
-                    ins = (
-                        1412 * 0.075
-                        + (2666.68 - 1412) * 0.09
-                        + (4000.03 - 2666.68) * 0.12
-                        + (7786.02 - 4000.03) * 0.14
-                    )
+    #INSS
+    ins = caclular_inss(sbr)
 
     # IRRF - usa base de calculo (salario bruto - INSS - deducao por dependentes)
     dep = f["dependentes"]
