@@ -110,42 +110,42 @@ def calcular_irrf(salario_bruto, inss, dependentes):
 
     return max(irrf, 0)
 
-def calcular_folha(f):
+def calcular_folha(funcionario):
     # f eh um dicionario com os dados do funcionario
     # campos: nome, salario_base, horas_extras, dependentes, tem_bonus, valor_bonus
     # retorna outro dicionario com salario_bruto inss irrf liquido etc
 
     # calcula horas extras (50% a mais)
-    sb = f["salario_base"]
-    he = f["horas_extras"]
+    salario_base = funcionario["salario_base"]
+    horas_extras = funcionario["horas_extras"]
 
-    valor_he = calcular_horas_extras(sb,he)
+    valor_horas_extras = calcular_horas_extras(salario_base, horas_extras)
 
     # bonus
-    if f["tem_bonus"] == True:
-        b = f["valor_bonus"]
+    if funcionario["tem_bonus"] == True:
+        bonus = funcionario["valor_bonus"]
     else:
-        b = 0
+        bonus = 0
 
     # salario bruto
-    sbr = sb + valor_he + b
+    salario_bruto = salario_base + valor_horas_extras + bonus
 
     # INSS
-    ins = caclular_inss(sbr)
+    inss = caclular_inss(salario_bruto)
 
     # IRRF - usa base de calculo (salario bruto - INSS - deducao por dependentes)
-    dep = f["dependentes"]
-    irrf = calcular_irrf(sbr, ins, dep)
+    dependentes = funcionario["dependentes"]
+    irrf = calcular_irrf(salario_bruto, inss, dependentes)
 
     # liquido
-    liq = sbr - ins - irrf
+    salario_liquido = salario_bruto - inss - irrf
 
     return {
-        "nome": f["nome"],
-        "salario_bruto": round(sbr, 2),
-        "valor_horas_extras": round(valor_he, 2),
-        "bonus": round(b, 2),
-        "inss": round(ins, 2),
+        "nome": funcionario["nome"],
+        "salario_bruto": round(salario_bruto, 2),
+        "valor_horas_extras": round(valor_horas_extras, 2),
+        "bonus": round(bonus, 2),
+        "inss": round(inss, 2),
         "irrf": round(irrf, 2),
-        "salario_liquido": round(liq, 2),
+        "salario_liquido": round(salario_liquido, 2),
     }
